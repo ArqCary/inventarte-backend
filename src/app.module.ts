@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
+    // Esto permite que las variables de entorno estén disponibles en toda la aplicación sin necesidad de importar ConfigModule en cada módulo
     ConfigModule.forRoot({
       isGlobal: true,
     }),

@@ -1,26 +1,45 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { LoginAuthDto } from './dto/login-auth.dto';
+import { UsersService } from '../users/users.service';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  async login(loginAuthDto: LoginAuthDto) {
+    const existingUser = await this.usersService.findOneWithPassword(
+      loginAuthDto.email,
+    );
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+    if (!existingUser) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+    const passwordMatch = await bcrypt.compare(
+      loginAuthDto.password,
+      existingUser.password,
+    );
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    const token = this.jwtService.sign({
+      sub: existingUser.id,
+      email: existingUser.email,
+    });
+
+    return {
+      user: await this.usersService.findOne(existingUser.id),
+      token,
+    };
   }
 }

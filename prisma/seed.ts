@@ -27,6 +27,7 @@ async function main() {
         email: 'inventarte.master@yopmail.com',
         idCard: 1234567890,
         password: password,
+        role: 'MASTER',
       },
     });
     console.log('Usuario creado o actualizado', user);

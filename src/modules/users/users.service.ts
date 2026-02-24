@@ -1,12 +1,13 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { User } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 type SafeUser = Omit<User, 'password'>;
@@ -31,17 +32,24 @@ export class UsersService {
     // Separamos el confirmPassword des resto para poder validarlo
     const { confirmPassword, ...rest } = createUserDto;
 
-    if (rest.password !== confirmPassword) {
-      throw new ConflictException('Las contraseñas no coinciden');
-    }
-
     // También validamos si el usuario existe antes de crearlo directamente, asi evito errores de prisma
-    const existingUser = await this.prismaService.user.findUnique({
-      where: { email: rest.email },
+    const existingUser = await this.prismaService.user.findFirst({
+      where: {
+        OR: [{ email: rest.email }, { idCard: rest.idCard }],
+      },
     });
 
     if (existingUser) {
-      throw new ConflictException('Un usuario con este correo ya existe');
+      if (rest.email === existingUser.email) {
+        throw new ConflictException('Un usuario con este correo ya existe');
+      }
+      throw new ConflictException(
+        'Un usuario con este documento de identificación ya existe',
+      );
+    }
+
+    if (rest.password !== confirmPassword) {
+      throw new ConflictException('Las contraseñas no coinciden');
     }
 
     // Hasheo la password por temas de segguridad
@@ -71,9 +79,32 @@ export class UsersService {
     return user;
   }
 
+  // Este lo estoy usando para validaciones de contraseñas en el auth.service
+  async findOneWithPassword(email: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    return user;
+  }
+
   // Aqui aplico la misma lógica del create para validar la password solo si el usuario quiere actualizar su contraseña
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<SafeUser> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    currentUser: SafeUser,
+  ): Promise<SafeUser> {
     await this.findOne(id);
+
+    if (
+      currentUser.role !== Role.MASTER &&
+      currentUser.role !== Role.ADMIN &&
+      currentUser.id !== id
+    ) {
+      throw new ForbiddenException('Solo puedes actualizar tu propio perfil');
+    }
 
     const { confirmPassword, ...rest } = updateUserDto;
 
