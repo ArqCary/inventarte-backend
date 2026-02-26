@@ -17,14 +17,14 @@ async function main() {
   try {
     console.log('Ejecutando la seed...');
 
-    const password = await bcrypt.hash('inventarteMaster', 10);
+    const password = await bcrypt.hash('Prueba123*', 10);
 
     const user = await prisma.user.upsert({
-      where: { email: 'inventarte.master@yopmail.com' },
+      where: { email: process.env.RESEND_FROM },
       update: {},
       create: {
         name: 'Master',
-        email: 'inventarte.master@yopmail.com',
+        email: `${process.env.RESEND_FROM}`,
         idCard: 1234567890,
         password: password,
         role: 'MASTER',

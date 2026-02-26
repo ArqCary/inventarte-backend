@@ -7,20 +7,50 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  idCard    Int      @unique
-  password  String
-  role      Role     @default(EMPLOYEE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  idCard        Int            @unique
+  password      String
+  role          Role           @default(EMPLOYEE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  roleRequests  RoleRequest[]
+  notifications Notification[]
 
   @@map("users")
+}
+
+model RoleRequest {
+  id        String            @id @default(uuid())
+  status    RoleRequestStatus @default(PENDING)
+  user      User              @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@map("role_requests")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  message   String
+  read      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
 }
 
 enum Role {
   MASTER
   ADMIN
   EMPLOYEE
+}
+
+enum RoleRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

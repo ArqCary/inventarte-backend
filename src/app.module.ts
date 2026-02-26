@@ -3,6 +3,9 @@ import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
+import { MailModule } from './modules/mail/mail.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { RoleRequestsModule } from './modules/role-requests/role-requests.module';
 
 @Module({
   imports: [
@@ -13,6 +16,9 @@ import { AuthModule } from './modules/auth/auth.module';
     UsersModule,
     PrismaModule,
     AuthModule,
+    MailModule,
+    NotificationsModule,
+    RoleRequestsModule,
   ],
   controllers: [],
   providers: [],
