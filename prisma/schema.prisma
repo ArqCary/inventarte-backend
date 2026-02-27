@@ -7,14 +7,15 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  name          String
-  email         String         @unique
-  idCard        Int            @unique
-  password      String
-  role          Role           @default(EMPLOYEE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  idCard    Int      @unique
+  password  String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   roleRequests  RoleRequest[]
   notifications Notification[]
 
@@ -24,10 +25,11 @@ model User {
 model RoleRequest {
   id        String            @id @default(uuid())
   status    RoleRequestStatus @default(PENDING)
-  user      User              @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 
   @@map("role_requests")
 }
@@ -36,11 +38,95 @@ model Notification {
   id        String   @id @default(uuid())
   message   String
   read      Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
 
+  user User @relation(fields: [userId], references: [id])
+
   @@map("notifications")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  description String
+  imageUrl    String
+  salePrice   Float
+  stock       Int
+  minStock    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categories     ProductCategory[]
+  suppliers      ProductSupplier[]
+  stockMovements stockMovement[]
+
+  @@map("products")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products ProductCategory[]
+
+  @@map("categories")
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+
+  product  Product  @relation(fields: [productId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@id([productId, categoryId])
+  @@map("product_category")
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String
+  email     String?
+  address   String?
+  website   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products ProductSupplier[]
+
+  @@map("suppliers")
+}
+
+model ProductSupplier {
+  productId     String
+  supplierId    String
+  purchasePrice Float
+  updatedAt     DateTime @updatedAt
+
+  product  Product  @relation(fields: [productId], references: [id])
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@id([productId, supplierId])
+  @@map("product_supplier")
+}
+
+model stockMovement {
+  id        String       @id @default(uuid())
+  type      MovementType
+  quantity  Int
+  reason    String
+  productId String
+  createdAt DateTime     @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("stock_movement")
 }
 
 enum Role {
@@ -53,4 +139,9 @@ enum RoleRequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum MovementType {
+  ENTRY
+  EXIT
 }
