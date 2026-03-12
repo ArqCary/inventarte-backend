@@ -6,10 +6,15 @@ import * as patch from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const httpsOptions = {
-    key: fs.readFileSync(patch.join(process.cwd(), 'ssl', 'key.pem')),
-    cert: fs.readFileSync(patch.join(process.cwd(), 'ssl', 'cert.pem')),
-  };
+  let httpsOptions: { key: Buffer; cert: Buffer } | undefined = undefined;
+
+  if (process.env.NODE_ENV !== 'production') {
+    httpsOptions = {
+      key: fs.readFileSync(patch.join(process.cwd(), 'ssl', 'key.pem')),
+      cert: fs.readFileSync(patch.join(process.cwd(), 'ssl', 'cert.pem')),
+    };
+  }
+
   const app = await NestFactory.create(AppModule, { httpsOptions });
   // Por medio de esta configuración puedo agregar validaciones a nivel global
   app.useGlobalPipes(
@@ -22,7 +27,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('InventarteApp API')
-    .setDescription('API REST para la gestión de usuarios, autenticación y notificaciones',)
+    .setDescription(
+      'API REST para la gestión de usuarios, autenticación y notificaciones',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -31,7 +38,11 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`Servidor corriendo en https://localhost:${process.env.PORT ?? 3000}`,);
-  console.log(`Swagger disponible en https://localhost:${process.env.PORT ?? 3000}/api/docs`,);
+  console.log(
+    `Servidor corriendo en https://localhost:${process.env.PORT ?? 3000}`,
+  );
+  console.log(
+    `Swagger disponible en https://localhost:${process.env.PORT ?? 3000}/api/docs`,
+  );
 }
 bootstrap();
